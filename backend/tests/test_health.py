@@ -21,9 +21,6 @@ def test_health_check(monkeypatch):
         patch("app.db.mongodb.close_mongo_connection", new_callable=AsyncMock),
         patch("app.services.pinecone_service._get_index", return_value=MagicMock()),
     ):
-        # If you haven't applied the lazy _get_index change yet, also mock the module-level init:
-        # patch("pinecone.Pinecone") as needed — but lazy init is the cleaner fix.
-
         from app.main import app
 
         client = TestClient(app)

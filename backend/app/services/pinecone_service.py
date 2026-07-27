@@ -12,6 +12,7 @@ def _get_index():
         _index = _pc.Index(settings.PINECONE_INDEX_NAME)
     return _index
 
+
 def upsert_chunks(document_id: str, owner_id: str, chunks: list[dict], vectors: list[list[float]]) -> list[str]:
     """
     Upserts one vector per chunk, namespaced by owner so one user's
