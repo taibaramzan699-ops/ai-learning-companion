@@ -1,10 +1,16 @@
 import io
+import os
 from pypdf import PdfReader
 from pdf2image import convert_from_bytes
 import pytesseract
-import pytesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 from PIL import Image
+
+# On Linux (e.g. the deployed container) tesseract is on PATH, so pytesseract
+# finds it automatically. Only point at the Windows install for local dev,
+# and only if it actually exists.
+_WINDOWS_TESSERACT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+if os.name == "nt" and os.path.exists(_WINDOWS_TESSERACT):
+    pytesseract.pytesseract.tesseract_cmd = _WINDOWS_TESSERACT
 
 
 def extract_text_from_pdf(file_bytes: bytes) -> list[tuple[int, str]]:

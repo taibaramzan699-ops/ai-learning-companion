@@ -1,0 +1,77 @@
+# Render Blueprint — deploys the whole app (backend + frontend) as one unit.
+# Render Dashboard -> New -> Blueprint -> pick this repo. Render reads this file
+# and creates both services. Fill in the secret env vars (marked sync:false) once.
+services:
+  # ---------------------------------------------------------------------------
+  # FastAPI backend (Docker so the tesseract/poppler system binaries are present)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: ai-learning-companion-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      # JSON array — must include the frontend's Render URL once it exists, e.g.
+      # ["https://ai-learning-companion-web.onrender.com"]
+      - key: CORS_ORIGINS
+        sync: false
+      # Firebase service account: upload the JSON as a Render "Secret File" on this
+      # service at the path below (Settings -> Secret Files).
+      - key: FIREBASE_CREDENTIALS_PATH
+        value: /etc/secrets/firebase-service-account.json
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: ai_learning_companion
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        value: learning-companion
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_CHAT_MODEL
+        value: gpt-4o-mini
+
+  # ---------------------------------------------------------------------------
+  # Next.js frontend (Node web service running `next start`)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: ai-learning-companion-web
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      # Full https URL of the backend service above (set after first deploy, then
+      # redeploy this service — NEXT_PUBLIC_* values are baked in at build time).
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        sync: false
