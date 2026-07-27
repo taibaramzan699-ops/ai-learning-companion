@@ -1,0 +1,21 @@
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env*.local
+
+# Python / FastAPI
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.venv/
+backend/venv/
+backend/.env
+backend/firebase-service-account.json
+backend/.pytest_cache/
+
+# General
+.DS_Store
+*.log
+.vscode/
+.idea/
