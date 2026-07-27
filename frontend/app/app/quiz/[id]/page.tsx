@@ -125,7 +125,7 @@ export default function QuizTakePage({ params }: { params: Promise<{ id: string 
           </div>
         ) : !intro ? (
           <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white py-24 text-center">
-            <p className="text-sm text-neutral-500">This quiz couldn't be found.</p>
+                        <p className="text-sm text-neutral-500">This quiz couldn&apos;t be found.</p>
           </div>
         ) : view === "intro" ? (
           <div className="rounded-2xl border border-[#E5E7EB] bg-white p-8 shadow-sm">

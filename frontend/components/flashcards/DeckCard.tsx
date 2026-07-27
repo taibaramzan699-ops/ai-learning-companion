@@ -81,7 +81,7 @@ export function DeckCard({ deck, onReview }: DeckCardProps) {
         <div className="flex flex-1 flex-col justify-center gap-3 py-2">
           <p className="text-xs leading-relaxed text-neutral-600">
             Delete <span className="font-medium text-[#111827]">{deck.title}</span> permanently?
-            This can't be undone.
+                        This can&apos;t be undone.
           </p>
           <div className="flex gap-2">
             <button

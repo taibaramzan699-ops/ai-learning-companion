@@ -229,7 +229,7 @@ export default function CreateFlashcardsPage() {
                 <h2 className="mb-1 font-serif text-lg font-semibold text-[#111827]">
                   What format should the cards take?
                 </h2>
-                <p className="mb-6 text-sm text-neutral-500">Choose the style that fits how you'll study.</p>
+                                <p className="mb-6 text-sm text-neutral-500">Choose the style that fits how you&apos;ll study.</p>
 
                 <div className="flex flex-col gap-2.5">
                   {cardTypeOptions.map((opt) => {

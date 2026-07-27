@@ -14,6 +14,7 @@ def test_health_check(monkeypatch):
     monkeypatch.setenv("CLOUDINARY_API_KEY", "test")
     monkeypatch.setenv("CLOUDINARY_API_SECRET", "test")
     monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("GEMINI_API_KEY", "test")
 
     from app.main import app
 

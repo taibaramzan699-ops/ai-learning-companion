@@ -544,7 +544,7 @@ function Hero() {
           transition={{ duration: 0.5, delay: 0.28 }}
         >
           Upload PDFs, lectures, and slides — then chat, quiz, and plan your study sessions with an
-          AI that's already read everything you have.
+                    AI that&apos;s already read everything you have.
         </motion.p>
 
         <motion.div
@@ -1059,7 +1059,7 @@ function Testimonials() {
                     <Star key={j} className="h-3.5 w-3.5 fill-current" style={{ color: GOLD }} />
                   ))}
                 </div>
-                <p className="mt-4 text-sm leading-relaxed text-black/70">"{q.text}"</p>
+                                <p className="mt-4 text-sm leading-relaxed text-black/70">&quot;{q.text}&quot;</p>
                 <p className="mt-4 text-xs font-medium uppercase tracking-wide text-black/40">{q.name}</p>
               </div>
             </Reveal>

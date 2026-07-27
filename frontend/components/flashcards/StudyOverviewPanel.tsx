@@ -122,7 +122,7 @@ export function StudyOverviewPanel({
       <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <h4 className="font-serif text-sm font-semibold text-[#111827]">
-            Today's Goal
+                        Today&apos;s Goal
           </h4>
           <button className="text-xs font-medium text-[#2563EB] hover:underline">
             Edit Goal
