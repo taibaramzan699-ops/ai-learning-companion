@@ -16,10 +16,12 @@ def test_health_check(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test")
     monkeypatch.setenv("GEMINI_API_KEY", "test")
 
+
     with (
         patch("app.db.mongodb.connect_to_mongo", new_callable=AsyncMock),
         patch("app.db.mongodb.close_mongo_connection", new_callable=AsyncMock),
         patch("app.services.pinecone_service._get_index", return_value=MagicMock()),
+        patch("app.core.security._ensure_firebase"),
     ):
         from app.main import app
 
@@ -27,3 +29,5 @@ def test_health_check(monkeypatch):
         response = client.get("/health")
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
+
+        
