@@ -1,8 +1,6 @@
 import json
-from typing import Annotated
 
-from pydantic import field_validator
-from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -14,22 +12,19 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Learning Companion API"
     API_V1_PREFIX: str = "/api/v1"
     ENVIRONMENT: str = "development"
-    # NoDecode: don't let pydantic-settings JSON-parse this before our validator
-    # runs, so a plain or comma-separated string works as well as a JSON array.
-    CORS_ORIGINS: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
+    # Kept as a raw string so pydantic-settings never tries to JSON-decode the env
+    # value (that decode crashes on non-JSON input). Read `cors_origins` for the list.
+    CORS_ORIGINS: str = '["http://localhost:3000"]'
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def _parse_cors_origins(cls, value):
-        """Accept a JSON array, a comma-separated string, or a single origin."""
-        if isinstance(value, str):
-            text = value.strip()
-            if not text:
-                return []
-            if text.startswith("["):
-                return json.loads(text)
-            return [origin.strip() for origin in text.split(",") if origin.strip()]
-        return value
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parse CORS_ORIGINS as a JSON array, comma-separated string, or single origin."""
+        text = self.CORS_ORIGINS.strip()
+        if not text:
+            return []
+        if text.startswith("["):
+            return json.loads(text)
+        return [origin.strip() for origin in text.split(",") if origin.strip()]
 
     # MongoDB Atlas
     MONGODB_URI: str
