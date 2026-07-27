@@ -1,9 +1,16 @@
 from pinecone import Pinecone
 from app.core.config import settings
 
-_pc = Pinecone(api_key=settings.PINECONE_API_KEY)
-_index = _pc.Index(settings.PINECONE_INDEX_NAME)
+_pc: Pinecone | None = None
+_index = None
 
+
+def _get_index():
+    global _pc, _index
+    if _index is None:
+        _pc = Pinecone(api_key=settings.PINECONE_API_KEY)
+        _index = _pc.Index(settings.PINECONE_INDEX_NAME)
+    return _index
 
 def upsert_chunks(document_id: str, owner_id: str, chunks: list[dict], vectors: list[list[float]]) -> list[str]:
     """
@@ -28,14 +35,14 @@ def upsert_chunks(document_id: str, owner_id: str, chunks: list[dict], vectors: 
         for i in range(len(chunks))
     ]
 
-    _index.upsert(vectors=records, namespace=owner_id)
+    _get_index().upsert(vectors=records, namespace=owner_id)
     return pinecone_ids
 
 
 def query_similar(owner_id: str, query_vector: list[float], top_k: int = 6, document_id: str | None = None) -> list[dict]:
     """Semantic search scoped to a single user's namespace, optionally filtered to one document."""
     filter_ = {"document_id": document_id} if document_id else None
-    result = _index.query(
+    result = _get_index().query(
         vector=query_vector,
         top_k=top_k,
         namespace=owner_id,
@@ -54,4 +61,4 @@ def query_similar(owner_id: str, query_vector: list[float], top_k: int = 6, docu
 
 
 def delete_document_vectors(owner_id: str, document_id: str) -> None:
-    _index.delete(filter={"document_id": document_id}, namespace=owner_id)
+    _get_index().delete(filter={"document_id": document_id}, namespace=owner_id)
