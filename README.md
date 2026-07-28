@@ -125,10 +125,6 @@ _Add at least 3 screenshots showing the app in actual use. Save them into a `doc
 <img width="1366" height="717" alt="planner" src="https://github.com/user-attachments/assets/d315402c-891d-47e6-8bf5-7fb7dc8da447" />
 
 
-
-
-> Tip: crop out browser chrome/other tabs, and make sure any visible data isn't sensitive.
-
 ---
 
 ## 🚀 How to Run Locally
@@ -191,5 +187,3 @@ See `docs/phase-1-architecture.md` for the full architecture, sitemap, and data 
 - [x] Quiz generator
 - [x] Flashcards
 - [x] Study planner
-
-> _Before submitting, update this checklist to reflect what's actually finished — grading is based on working features, not planned ones._
