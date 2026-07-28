@@ -11,13 +11,6 @@ An AI-powered study platform that turns any course material — PDF, Word doc, P
 
 **Who it's for:** University/college students juggling multiple courses who want an efficient way to review and self-test on their own lecture notes and readings.
 
----
-
-## 🔗 Live Demo
-
-**URL:**
-
-
 
 ---
 
@@ -181,14 +174,6 @@ cd backend && pytest -q
 # frontend
 cd frontend && npm run lint && npm run type-check
 ```
-
----
-
-## ☁️ Deployment
-
-- **Frontend → Vercel:** import the repo, set root directory to `frontend`, add the same env vars as `.env.local`.
-- **Backend → Render:** new Web Service, root directory `backend`, build command `pip install -r requirements.txt`, start command `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, add the same env vars as `.env`.
-- CI runs lint/type-check/build (frontend) and pytest (backend) on every PR via `.github/workflows/ci.yml`.
 
 ---
 
