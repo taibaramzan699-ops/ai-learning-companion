@@ -12,7 +12,6 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Always typed as Auth so the build never fails. Runtime may be a stub if env is missing.
 export const firebaseApp = app;
 export const auth: Auth = firebaseConfig.apiKey
   ? getAuth(app)
