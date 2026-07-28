@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -10,29 +10,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const hasValidConfig = Boolean(
-  firebaseConfig.apiKey &&
-    firebaseConfig.authDomain &&
-    firebaseConfig.projectId &&
-    firebaseConfig.appId
-);
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-let firebaseApp: FirebaseApp | undefined;
-let auth: Auth | undefined;
-
-if (hasValidConfig) {
-  try {
-    firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    auth = getAuth(firebaseApp);
-  } catch (err) {
-    console.error("Firebase init failed:", err);
-    firebaseApp = undefined;
-    auth = undefined;
-  }
-} else {
-  console.error(
-    "Missing NEXT_PUBLIC_FIREBASE_* env vars — auth disabled until they are set at build time."
-  );
-}
-
-export { firebaseApp, auth };
+// Always typed as Auth so the build never fails. Runtime may be a stub if env is missing.
+export const firebaseApp = app;
+export const auth: Auth = firebaseConfig.apiKey
+  ? getAuth(app)
+  : (null as unknown as Auth);

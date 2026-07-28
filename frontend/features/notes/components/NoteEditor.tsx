@@ -34,7 +34,7 @@ export function NoteEditor({ note, isSaving, isDeleting, onSave, onDelete, onClo
     setIsDownloading(format);
     try {
       const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + "/api/v1";
-      const currentUser = auth.currentUser;
+      const currentUser = auth?.currentUser ?? null;
       const token = currentUser ? await currentUser.getIdToken() : null;
 
       const res = await fetch(`${API_BASE}/notes/${note.id}/export?format=${format}`, {
