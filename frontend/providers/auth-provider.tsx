@@ -20,10 +20,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // If Firebase never fires onAuthStateChanged (bad config / network),
+    // stop hanging on "Loading…" after 8 seconds.
+    const timeout = setTimeout(() => {
+      useAuthStore.getState().setUser(null);
+    }, 8000);
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      clearTimeout(timeout);
       setUser(user);
     });
-    return () => unsubscribe();
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, [setUser]);
 
   return <>{children}</>;
