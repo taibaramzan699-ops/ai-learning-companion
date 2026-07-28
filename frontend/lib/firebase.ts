@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { getAuth, type Auth } from "firebase/auth";
 
 // Real Firebase config — values come from your Firebase project settings.
 // Set these in frontend/.env.local (see .env.example).
@@ -13,4 +13,11 @@ const firebaseConfig = {
 };
 
 export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-export const auth = getAuth(firebaseApp);
+
+// Only initialize Auth when a real API key is present. This keeps the production
+// build (static prerender of pages like /login) from crashing with
+// auth/invalid-api-key when the NEXT_PUBLIC_FIREBASE_* vars aren't set yet. Once
+// those vars are supplied at build time, auth initializes normally in the browser.
+export const auth: Auth = firebaseConfig.apiKey
+  ? getAuth(firebaseApp)
+  : (undefined as unknown as Auth);

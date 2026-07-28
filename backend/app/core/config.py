@@ -1,3 +1,5 @@
+import json
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,7 +12,19 @@ class Settings(BaseSettings):
     APP_NAME: str = "AI Learning Companion API"
     API_V1_PREFIX: str = "/api/v1"
     ENVIRONMENT: str = "development"
-    CORS_ORIGINS: list[str] = ["http://localhost:3000"]
+    # Kept as a raw string so pydantic-settings never tries to JSON-decode the env
+    # value (that decode crashes on non-JSON input). Read `cors_origins` for the list.
+    CORS_ORIGINS: str = '["http://localhost:3000"]'
+
+    @property
+    def cors_origins(self) -> list[str]:
+        """Parse CORS_ORIGINS as a JSON array, comma-separated string, or single origin."""
+        text = self.CORS_ORIGINS.strip()
+        if not text:
+            return []
+        if text.startswith("["):
+            return json.loads(text)
+        return [origin.strip() for origin in text.split(",") if origin.strip()]
 
     # MongoDB Atlas
     MONGODB_URI: str
