@@ -5,17 +5,28 @@ import {
   GoogleAuthProvider,
   updateProfile,
   sendPasswordResetEmail,
+  type Auth,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { api } from "@/services/api";
 
 const googleProvider = new GoogleAuthProvider();
+
+function requireAuth(): Auth {
+  if (!auth) {
+    throw new Error(
+      "Firebase Auth is not initialized. Check NEXT_PUBLIC_FIREBASE_* env vars."
+    );
+  }
+  return auth;
+}
+
 async function syncBackendUser() {
   await api.post("/api/v1/auth/sync", {});
 }
 
 export async function signUpWithEmail(name: string, email: string, password: string) {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
+  const credential = await createUserWithEmailAndPassword(requireAuth(), email, password);
   if (name) {
     await updateProfile(credential.user, { displayName: name });
   }
@@ -23,17 +34,17 @@ export async function signUpWithEmail(name: string, email: string, password: str
 }
 
 export async function signInWithEmail(email: string, password: string) {
-  await signInWithEmailAndPassword(auth, email, password);
+  await signInWithEmailAndPassword(requireAuth(), email, password);
   await syncBackendUser();
 }
 
 export async function signInWithGoogle() {
-  await signInWithPopup(auth, googleProvider);
+  await signInWithPopup(requireAuth(), googleProvider);
   await syncBackendUser();
 }
 
 export async function sendPasswordReset(email: string) {
-  await sendPasswordResetEmail(auth, email);
+  await sendPasswordResetEmail(requireAuth(), email);
 }
 
 export function friendlyAuthError(error: unknown): string {
