@@ -1,8 +1,6 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 
-// Real Firebase config — values come from your Firebase project settings.
-// Set these in frontend/.env.local (see .env.example).
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -12,12 +10,29 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const hasValidConfig = Boolean(
+  firebaseConfig.apiKey &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId &&
+    firebaseConfig.appId
+);
 
-// Only initialize Auth when a real API key is present. This keeps the production
-// build (static prerender of pages like /login) from crashing with
-// auth/invalid-api-key when the NEXT_PUBLIC_FIREBASE_* vars aren't set yet. Once
-// those vars are supplied at build time, auth initializes normally in the browser.
-export const auth: Auth = firebaseConfig.apiKey
-  ? getAuth(firebaseApp)
-  : (undefined as unknown as Auth);
+let firebaseApp: FirebaseApp | undefined;
+let auth: Auth | undefined;
+
+if (hasValidConfig) {
+  try {
+    firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    auth = getAuth(firebaseApp);
+  } catch (err) {
+    console.error("Firebase init failed:", err);
+    firebaseApp = undefined;
+    auth = undefined;
+  }
+} else {
+  console.error(
+    "Missing NEXT_PUBLIC_FIREBASE_* env vars — auth disabled until they are set at build time."
+  );
+}
+
+export { firebaseApp, auth };
