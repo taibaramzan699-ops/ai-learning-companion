@@ -6,11 +6,17 @@ frontend/.env.local
 frontend/.env*.local
 
 # Python / FastAPI
+__pycache__/
+*.pyc
 backend/__pycache__/
 backend/**/__pycache__/
+.venv/
 backend/.venv/
 backend/venv/
+.env
 backend/.env
+*.egg-info/
+firebase-service-account.json
 backend/firebase-service-account.json
 backend/.pytest_cache/
 
