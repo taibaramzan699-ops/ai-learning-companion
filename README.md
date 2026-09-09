@@ -1,8 +1,8 @@
-
 <img width="1366" height="736" alt="dashboard" src="https://github.com/user-attachments/assets/5bd2144d-2908-4e62-aa24-1dbc7045e96e" />
 <img width="1366" height="730" alt="tutor" src="https://github.com/user-attachments/assets/86f86e4f-5c7c-40d9-914b-3eeda5fdd386" />
 <img width="1366" height="721" alt="quiz" src="https://github.com/user-attachments/assets/3dde3f24-f6b3-47b7-a60b-5fcb21c77fe0" />
-<img width="1680" height="1010" alt="Planner" src="https://github.com/user-attachments/assets/da9e72f4-6175-422d-a862-76f57687ad26" />
+<img width="1676" height="1014" alt="Planner" src="https://github.com/user-attachments/assets/0ca5b7b3-71c0-42ad-affb-09830f148b66" />
+
 
 # AI Learning Companion
 
@@ -117,7 +117,7 @@ options (if multiple choice), correct_answer, explanation.
 
 | Quiz | Planner |
 |---|---|
-| <img width="1366" height="721" alt="quiz" src="https://github.com/user-attachments/assets/3dde3f24-f6b3-47b7-a60b-5fcb21c77fe0" /> | <img width="1680" height="1010" alt="Planner" src="https://github.com/user-attachments/assets/da9e72f4-6175-422d-a862-76f57687ad26" /> |
+| <img width="1366" height="721" alt="quiz" src="https://github.com/user-attachments/assets/3dde3f24-f6b3-47b7-a60b-5fcb21c77fe0" /> | <img width="1676" height="1014" alt="Planner" src="https://github.com/user-attachments/assets/0ca5b7b3-71c0-42ad-affb-09830f148b66" /> |
 
 ---
 
