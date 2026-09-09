@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   Check,
-  CheckCircle2,
   ChevronDown,
-  Circle,
-  Clock,
-  ListTodo,
   Pencil,
   Plus,
   Trash2,
@@ -20,6 +16,7 @@ import { cn } from "@/lib/utils";
 type Priority = "low" | "medium" | "high";
 type FilterTab = "all" | "pending" | "completed" | "overdue" | "today";
 type SortBy = "newest" | "deadline" | "priority";
+type BucketKey = "overdue" | "today" | "tomorrow" | "week" | "later" | "completed";
 
 interface Task {
   id: string;
@@ -33,10 +30,10 @@ interface Task {
 
 const STORAGE_KEY = "study-planner-tasks";
 
-const PRIORITY_STYLES: Record<Priority, { label: string; badge: string; bar: string }> = {
-  high: { label: "High", badge: "bg-rose-50 text-rose-600", bar: "bg-rose-400" },
-  medium: { label: "Medium", badge: "bg-amber-50 text-amber-600", bar: "bg-amber-400" },
-  low: { label: "Low", badge: "bg-emerald-50 text-emerald-600", bar: "bg-emerald-400" },
+const PRIORITY_STYLES: Record<Priority, { label: string; dot: string; text: string }> = {
+  high: { label: "High", dot: "bg-[#B33F2E]", text: "text-[#B33F2E]" },
+  medium: { label: "Medium", dot: "bg-[#93691E]", text: "text-[#93691E]" },
+  low: { label: "Low", dot: "bg-[#3F6B4E]", text: "text-[#3F6B4E]" },
 };
 
 const PRIORITY_ORDER: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
@@ -54,6 +51,16 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: "deadline", label: "Deadline" },
   { value: "priority", label: "Priority" },
 ];
+
+const BUCKET_ORDER: BucketKey[] = ["overdue", "today", "tomorrow", "week", "later", "completed"];
+const BUCKET_LABEL: Record<BucketKey, string> = {
+  overdue: "Overdue",
+  today: "Today",
+  tomorrow: "Tomorrow",
+  week: "This week",
+  later: "Later",
+  completed: "Completed",
+};
 
 function loadTasks(): Task[] {
   if (typeof window === "undefined") return [];
@@ -74,6 +81,13 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function diffDaysFromToday(iso: string): number {
+  const date = new Date(iso + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function isOverdue(task: Task) {
   return !task.completed && task.deadline < todayISO();
 }
@@ -82,26 +96,34 @@ function isToday(task: Task) {
   return task.deadline === todayISO();
 }
 
-function formatDeadline(iso: string): { label: string; overdue: boolean } {
+function formatExactDate(iso: string): string {
   const date = new Date(iso + "T00:00:00");
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diffDays = Math.round((date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
-  if (diffDays === 0) return { label: "Today", overdue: false };
-  if (diffDays === 1) return { label: "Tomorrow", overdue: false };
-  if (diffDays < 0) return { label: `${Math.abs(diffDays)}d overdue`, overdue: true };
-  return {
-    label: date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
-    overdue: false,
-  };
+function getBucket(task: Task): BucketKey {
+  if (task.completed) return "completed";
+  if (isOverdue(task)) return "overdue";
+  if (isToday(task)) return "today";
+  const diff = diffDaysFromToday(task.deadline);
+  if (diff === 1) return "tomorrow";
+  if (diff > 1 && diff <= 7) return "week";
+  return "later";
 }
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good Morning";
-  if (hour < 17) return "Good Afternoon";
-  return "Good Evening";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+function formatToday() {
+  return new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 interface TaskFormValue {
@@ -119,66 +141,129 @@ const EMPTY_FORM: TaskFormValue = {
 };
 
 // ---------------------------------------------------------------------------
-// Stat card
+// Stat strip
 // ---------------------------------------------------------------------------
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  color,
+function StatStrip({
+  total,
+  completed,
+  pending,
+  overdue,
+  progressPct,
 }: {
-  icon: React.ElementType;
-  label: string;
-  value: number;
-  color: "blue" | "emerald" | "amber" | "rose";
+  total: number;
+  completed: number;
+  pending: number;
+  overdue: number;
+  progressPct: number;
 }) {
-  const colorMap = {
-    blue: { bg: "bg-blue-50", text: "text-[#2563EB]" },
-    emerald: { bg: "bg-emerald-50", text: "text-emerald-600" },
-    amber: { bg: "bg-amber-50", text: "text-amber-600" },
-    rose: { bg: "bg-rose-50", text: "text-rose-600" },
-  }[color];
+  const items: { value: number; label: string }[] = [
+    { value: total, label: "Total" },
+    { value: pending, label: "Pending" },
+    { value: completed, label: "Completed" },
+    { value: overdue, label: "Overdue" },
+  ];
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md">
-      <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", colorMap.bg)}>
-        <Icon className={cn("h-5 w-5", colorMap.text)} />
+    <div className="overflow-hidden rounded-xl border border-[#E3E1D7] bg-white">
+      <div className="grid grid-cols-2 divide-x divide-[#E3E1D7] sm:grid-cols-4">
+        {items.map((item) => (
+          <div key={item.label} className="px-5 py-4">
+            <p className="font-mono text-2xl font-medium text-[#1B1B17]">{item.value}</p>
+            <p className="mt-0.5 text-xs text-[#6E6C63]">{item.label}</p>
+          </div>
+        ))}
       </div>
-      <div className="min-w-0">
-        <p className="font-serif text-xl font-semibold text-[#111827]">{value}</p>
-        <p className="text-xs text-neutral-500">{label}</p>
+      <div className="flex items-center gap-3 border-t border-[#E3E1D7] px-5 py-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#EDECE5]">
+          <div
+            className="h-full rounded-full bg-[#2F4858] transition-all duration-500 ease-out"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+        <span className="font-mono text-xs text-[#6E6C63]">{progressPct}%</span>
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Status badge
+// Task row
 // ---------------------------------------------------------------------------
 
-function StatusBadge({ task }: { task: Task }) {
-  if (task.completed) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600">
-        <CheckCircle2 className="h-3 w-3" />
-        Completed
-      </span>
-    );
-  }
-  if (isOverdue(task)) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-600">
-        <TriangleAlert className="h-3 w-3" />
-        Overdue
-      </span>
-    );
-  }
+function Divider() {
+  return <span className="h-3 w-px shrink-0 bg-[#E3E1D7]" aria-hidden />;
+}
+
+function TaskRow({
+  task,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  task: Task;
+  onToggle: (id: string) => void;
+  onEdit: (task: Task) => void;
+  onDelete: (id: string) => void;
+}) {
+  const priority = PRIORITY_STYLES[task.priority];
+
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-500">
-      <Circle className="h-3 w-3" />
-      Pending
-    </span>
+    <div className="group flex items-start gap-3 border-b border-[#E3E1D7] py-3.5 last:border-b-0">
+      <button
+        onClick={() => onToggle(task.id)}
+        className={cn(
+          "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors active:scale-90",
+          task.completed
+            ? "border-[#2F4858] bg-[#2F4858] text-white"
+            : "border-[#C9C7BC] text-transparent hover:border-[#2F4858]"
+        )}
+        aria-label="Toggle complete"
+      >
+        <Check className="h-3 w-3" />
+      </button>
+
+      <span className={cn("mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full", priority.dot)} aria-hidden />
+
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            "text-sm text-[#1B1B17]",
+            task.completed && "text-[#9C9A90] line-through"
+          )}
+        >
+          {task.title}
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-[#6E6C63]">
+          <span className={priority.text}>{priority.label}</span>
+          {task.subject && (
+            <>
+              <Divider />
+              <span>{task.subject}</span>
+            </>
+          )}
+          <Divider />
+          <span className="font-mono">{formatExactDate(task.deadline)}</span>
+        </div>
+      </div>
+
+      <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          onClick={() => onEdit(task)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#9C9A90] hover:bg-[#F1F0EC] hover:text-[#1B1B17]"
+          aria-label="Edit task"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => onDelete(task.id)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-[#9C9A90] hover:bg-[#FBEAE6] hover:text-[#B33F2E]"
+          aria-label="Delete task"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -200,25 +285,20 @@ function TaskFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <div className="fixed inset-0 bg-black/45 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#E5E7EB] bg-white shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-neutral-100 px-6 py-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#111827] text-white">
-              <CalendarDays className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="font-serif text-lg font-semibold leading-tight text-[#111827]">
-                {isEditing ? "Edit Task" : "Add Task"}
-              </h2>
-              <p className="text-xs text-neutral-500">
-                {isEditing ? "Update your task details" : "Plan a new study task"}
-              </p>
-            </div>
+      <div className="fixed inset-0 bg-[#1B1B17]/45 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-[#E3E1D7] bg-white shadow-2xl">
+        <div className="flex items-start justify-between gap-3 border-b border-[#EDECE5] px-6 py-5">
+          <div>
+            <h2 className="font-serif text-lg font-semibold leading-tight text-[#1B1B17]">
+              {isEditing ? "Edit task" : "Add task"}
+            </h2>
+            <p className="mt-0.5 text-xs text-[#6E6C63]">
+              {isEditing ? "Update the details below" : "What are you working on?"}
+            </p>
           </div>
           <button
             onClick={onCancel}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[#9C9A90] hover:bg-[#F1F0EC] hover:text-[#1B1B17]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -226,67 +306,67 @@ function TaskFormModal({
 
         <div className="space-y-4 px-6 py-5">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-500">Task title</label>
+            <label className="mb-1.5 block text-xs font-medium text-[#6E6C63]">Task title</label>
             <input
               autoFocus
               value={form.title}
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="e.g. Finish CSS Flexbox notes"
-              className="w-full rounded-xl border border-[#E5E7EB] px-3.5 py-2.5 text-sm text-[#111827] outline-none transition-colors focus:border-[#2563EB]"
+              className="w-full rounded-xl border border-[#E3E1D7] px-3.5 py-2.5 text-sm text-[#1B1B17] outline-none transition-colors focus:border-[#2F4858]"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-500">Subject / Category</label>
+            <label className="mb-1.5 block text-xs font-medium text-[#6E6C63]">Subject / category</label>
             <input
               value={form.subject}
               onChange={(e) => setForm((f) => ({ ...f, subject: e.target.value }))}
               placeholder="e.g. Web Development"
-              className="w-full rounded-xl border border-[#E5E7EB] px-3.5 py-2.5 text-sm text-[#111827] outline-none transition-colors focus:border-[#2563EB]"
+              className="w-full rounded-xl border border-[#E3E1D7] px-3.5 py-2.5 text-sm text-[#1B1B17] outline-none transition-colors focus:border-[#2F4858]"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-neutral-500">Deadline</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#6E6C63]">Deadline</label>
               <input
                 type="date"
                 value={form.deadline}
                 onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-                className="w-full rounded-xl border border-[#E5E7EB] px-3.5 py-2.5 text-sm text-[#111827] outline-none transition-colors focus:border-[#2563EB]"
+                className="w-full rounded-xl border border-[#E3E1D7] px-3.5 py-2.5 text-sm text-[#1B1B17] outline-none transition-colors focus:border-[#2F4858]"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-neutral-500">Priority</label>
+              <label className="mb-1.5 block text-xs font-medium text-[#6E6C63]">Priority</label>
               <div className="relative">
                 <select
                   value={form.priority}
                   onChange={(e) => setForm((f) => ({ ...f, priority: e.target.value as Priority }))}
-                  className="w-full appearance-none rounded-xl border border-[#E5E7EB] bg-white px-3.5 py-2.5 pr-9 text-sm text-[#111827] outline-none transition-colors focus:border-[#2563EB]"
+                  className="w-full appearance-none rounded-xl border border-[#E3E1D7] bg-white px-3.5 py-2.5 pr-9 text-sm text-[#1B1B17] outline-none transition-colors focus:border-[#2F4858]"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9C9A90]" />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex gap-3 border-t border-neutral-100 px-6 py-5">
+        <div className="flex gap-3 border-t border-[#EDECE5] px-6 py-5">
           <button
             onClick={onCancel}
-            className="flex-1 rounded-xl border border-[#E5E7EB] py-2.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50"
+            className="flex-1 rounded-xl border border-[#E3E1D7] py-2.5 text-sm font-medium text-[#6E6C63] transition-colors hover:bg-[#F9F8F4]"
           >
             Cancel
           </button>
           <button
             onClick={() => form.title.trim() && onSave(form)}
             disabled={!form.title.trim()}
-            className="flex-1 rounded-xl bg-[#111827] py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-neutral-800 disabled:opacity-40"
+            className="flex-1 rounded-xl bg-[#2F4858] py-2.5 text-sm font-medium text-white transition-all active:scale-[0.98] hover:bg-[#24363F] disabled:opacity-40"
           >
-            Save Task
+            Save task
           </button>
         </div>
       </div>
@@ -355,11 +435,25 @@ export default function StudyPlannerPage() {
         result.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     }
 
-    // Completed tasks always sink to the bottom, regardless of sort.
-    result.sort((a, b) => Number(a.completed) - Number(b.completed));
-
     return result;
   }, [tasks, filterTab, sortBy]);
+
+  const groups = useMemo(() => {
+    const buckets: Record<BucketKey, Task[]> = {
+      overdue: [],
+      today: [],
+      tomorrow: [],
+      week: [],
+      later: [],
+      completed: [],
+    };
+    for (const task of visibleTasks) {
+      buckets[getBucket(task)].push(task);
+    }
+    return BUCKET_ORDER.map((key) => ({ key, label: BUCKET_LABEL[key], tasks: buckets[key] })).filter(
+      (group) => group.tasks.length > 0
+    );
+  }, [visibleTasks]);
 
   function openAddModal() {
     setEditingTask(null);
@@ -397,59 +491,43 @@ export default function StudyPlannerPage() {
     }
   }
 
+  const summaryLine =
+    stats.total === 0
+      ? "Nothing on your plate yet."
+      : stats.overdue > 0
+      ? `${stats.overdue} task${stats.overdue === 1 ? "" : "s"} overdue, ${stats.pending} still open.`
+      : stats.pending > 0
+      ? `${stats.pending} task${stats.pending === 1 ? "" : "s"} open, ${stats.completed} done.`
+      : "Everything's done — nice work.";
+
   return (
-    <div className="min-h-full bg-[#F9FAFB]">
-      <div className="mx-auto max-w-4xl space-y-8 px-6 py-8 sm:px-8">
-        {/* Hero header */}
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+    <div className="min-h-full bg-[#F6F6F1]">
+      <div className="mx-auto max-w-3xl space-y-6 px-6 py-10 sm:px-8">
+        {/* Header */}
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <h1 className="font-serif text-2xl font-semibold text-[#111827]">
-              {getGreeting()} 👋
-            </h1>
-            <p className="mt-1 text-sm text-neutral-500">
-              Stay organized and keep your learning on track.
-            </p>
+            <p className="text-xs text-[#6E6C63]">{formatToday()}</p>
+            <h1 className="mt-1 font-serif text-3xl font-semibold text-[#1B1B17]">{getGreeting()}</h1>
+            <p className="mt-1.5 text-sm text-[#6E6C63]">{summaryLine}</p>
           </div>
           <button
             onClick={openAddModal}
-            className="flex shrink-0 items-center gap-2 self-start rounded-xl bg-[#111827] px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 active:scale-[0.98] hover:-translate-y-0.5 hover:bg-neutral-800"
+            className="flex shrink-0 items-center gap-2 self-start rounded-xl bg-[#2F4858] px-4 py-2.5 text-sm font-medium text-white transition-colors active:scale-[0.98] hover:bg-[#24363F]"
           >
             <Plus className="h-4 w-4" />
-            Add Task
+            Add task
           </button>
         </div>
 
         {tasks.length > 0 && (
           <>
-            {/* Stat cards */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <StatCard icon={ListTodo} label="Total Tasks" value={stats.total} color="blue" />
-              <StatCard icon={CheckCircle2} label="Completed" value={stats.completed} color="emerald" />
-              <StatCard icon={Clock} label="Pending" value={stats.pending} color="amber" />
-              <StatCard icon={TriangleAlert} label="Overdue" value={stats.overdue} color="rose" />
-            </div>
-
-            {/* Progress bar */}
-            <div className="rounded-2xl border border-[#E5E7EB] bg-white p-5 shadow-sm">
-              <div className="mb-2 flex items-center justify-between">
-                <p className="font-serif text-sm font-semibold text-[#111827]">Overall Progress</p>
-                <span className="text-sm font-medium text-[#2563EB]">{progressPct}%</span>
-              </div>
-              <div className="h-2.5 w-full overflow-hidden rounded-full bg-neutral-100">
-                <div
-                  className="h-full rounded-full bg-[#2563EB] transition-all duration-500 ease-out"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-              <p className="mt-2.5 text-xs text-neutral-500">
-                {stats.completed} of {stats.total} tasks completed
-                {progressPct === 100
-                  ? " — everything's done, nice work!"
-                  : progressPct >= 50
-                  ? " — keep going, you're making great progress."
-                  : ""}
-              </p>
-            </div>
+            <StatStrip
+              total={stats.total}
+              completed={stats.completed}
+              pending={stats.pending}
+              overdue={stats.overdue}
+              progressPct={progressPct}
+            />
 
             {/* Filters + sort */}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -461,8 +539,8 @@ export default function StudyPlannerPage() {
                     className={cn(
                       "rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors",
                       filterTab === tab.value
-                        ? "bg-[#111827] text-white"
-                        : "bg-white text-neutral-600 border border-[#E5E7EB] hover:border-neutral-300"
+                        ? "bg-[#2F4858] text-white"
+                        : "border border-[#E3E1D7] bg-white text-[#6E6C63] hover:border-[#C9C7BC]"
                     )}
                   >
                     {tab.label}
@@ -474,7 +552,7 @@ export default function StudyPlannerPage() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortBy)}
-                  className="appearance-none rounded-xl border border-[#E5E7EB] bg-white py-2 pl-3.5 pr-9 text-xs font-medium text-neutral-600 outline-none focus:border-[#2563EB]"
+                  className="appearance-none rounded-xl border border-[#E3E1D7] bg-white py-2 pl-3.5 pr-9 text-xs font-medium text-[#6E6C63] outline-none focus:border-[#2F4858]"
                 >
                   {SORT_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -482,115 +560,61 @@ export default function StudyPlannerPage() {
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-neutral-400" />
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#9C9A90]" />
               </div>
             </div>
           </>
         )}
 
-        {/* Task list */}
+        {/* Agenda */}
         {tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[#E5E7EB] bg-white py-24 text-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
-              <CalendarDays className="h-7 w-7 text-[#2563EB]" />
+          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-[#E3E1D7] bg-white py-24 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#E3E1D7]">
+              <CalendarDays className="h-5 w-5 text-[#6E6C63]" />
             </div>
-            <p className="font-serif text-base font-semibold text-[#111827]">No Tasks Yet</p>
-            <p className="max-w-xs text-sm text-neutral-500">
-              Start planning your study schedule.
-            </p>
+            <p className="font-serif text-base font-semibold text-[#1B1B17]">No tasks yet</p>
+            <p className="max-w-xs text-sm text-[#6E6C63]">Add the first thing you need to study.</p>
             <button
               onClick={openAddModal}
-              className="mt-1 flex items-center gap-2 rounded-xl bg-[#111827] px-4 py-2.5 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-neutral-800"
+              className="mt-1 flex items-center gap-2 rounded-xl bg-[#2F4858] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#24363F]"
             >
               <Plus className="h-4 w-4" />
-              Add Your First Task
+              Add your first task
             </button>
           </div>
-        ) : visibleTasks.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white py-16 text-center">
-            <p className="text-sm text-neutral-500">No tasks match this filter.</p>
+        ) : groups.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-[#E3E1D7] bg-white py-16 text-center">
+            <p className="text-sm text-[#6E6C63]">No tasks match this filter.</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {visibleTasks.map((task) => {
-              const { label: deadlineLabel } = formatDeadline(task.deadline);
-              const priority = PRIORITY_STYLES[task.priority];
-              return (
-                <div
-                  key={task.id}
-                  className={cn(
-                    "group relative overflow-hidden rounded-2xl border border-[#E5E7EB] bg-white p-4 pl-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-xl",
-                    task.completed && "opacity-60"
-                  )}
-                >
-                  <span
+          <div className="space-y-6">
+            {groups.map((group) => (
+              <div key={group.key}>
+                <div className="mb-1 flex items-center gap-2">
+                  {group.key === "overdue" && <TriangleAlert className="h-3.5 w-3.5 text-[#B33F2E]" />}
+                  <h2
                     className={cn(
-                      "absolute left-0 top-0 h-full w-1",
-                      task.completed ? "bg-neutral-200" : priority.bar
+                      "text-sm font-medium",
+                      group.key === "overdue" ? "text-[#B33F2E]" : "text-[#1B1B17]"
                     )}
-                  />
-
-                  <div className="flex items-start gap-3">
-                    <button
-                      onClick={() => toggleComplete(task.id)}
-                      className={cn(
-                        "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all active:scale-90",
-                        task.completed
-                          ? "border-[#2563EB] bg-[#2563EB] text-white"
-                          : "border-neutral-300 text-transparent hover:border-[#2563EB]"
-                      )}
-                      aria-label="Toggle complete"
-                    >
-                      <Check className="h-3 w-3" />
-                    </button>
-
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={cn(
-                          "font-serif text-sm font-semibold text-[#111827]",
-                          task.completed && "line-through"
-                        )}
-                      >
-                        {task.title}
-                      </p>
-
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        {task.subject && (
-                          <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
-                            {task.subject}
-                          </span>
-                        )}
-                        <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium", priority.badge)}>
-                          {priority.label} Priority
-                        </span>
-                        <StatusBadge task={task} />
-                        <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600">
-                          <CalendarDays className="h-3 w-3" />
-                          {deadlineLabel}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        onClick={() => openEditModal(task)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
-                        aria-label="Edit task"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => deleteTask(task.id)}
-                        className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 hover:bg-rose-50 hover:text-rose-600"
-                        aria-label="Delete task"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
+                  >
+                    {group.label}
+                  </h2>
+                  <span className="font-mono text-xs text-[#9C9A90]">{group.tasks.length}</span>
                 </div>
-              );
-            })}
+                <div className="rounded-xl border border-[#E3E1D7] bg-white px-4">
+                  {group.tasks.map((task) => (
+                    <TaskRow
+                      key={task.id}
+                      task={task}
+                      onToggle={toggleComplete}
+                      onEdit={openEditModal}
+                      onDelete={deleteTask}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -12,6 +12,19 @@ _WINDOWS_TESSERACT = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 if os.name == "nt" and os.path.exists(_WINDOWS_TESSERACT):
     pytesseract.pytesseract.tesseract_cmd = _WINDOWS_TESSERACT
 
+# macOS (Homebrew) needs TESSDATA_PREFIX pointed explicitly at its tessdata dir,
+# since pytesseract reads it from the environment, not from tesseract_cmd.
+_MAC_TESSDATA_CANDIDATES = [
+    "/Users/macbook/.homebrew/Cellar/tesseract/5.5.3/share/tessdata",
+    "/opt/homebrew/share/tessdata",
+    "/usr/local/share/tessdata",
+]
+if "TESSDATA_PREFIX" not in os.environ:
+    for _path in _MAC_TESSDATA_CANDIDATES:
+        if os.path.isdir(_path):
+            os.environ["TESSDATA_PREFIX"] = _path
+            break
+
 
 def extract_text_from_pdf(file_bytes: bytes) -> list[tuple[int, str]]:
     """
