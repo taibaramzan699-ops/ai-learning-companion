@@ -189,12 +189,4 @@ ai-learning-companion/
   credentials — all via environment variables, never committed (`backend/.env.example` documents
   required vars; `.gitignore` excludes `.env` and `firebase-service-account.json`).
 
-## 12. Known Gaps vs. Original Phase-1 Plan
-
-- No multi-agent orchestration layer (LangGraph) yet — each AI feature calls the LLM directly
-  through its own service rather than a shared agent state machine.
-- No Analytics dashboard, Study Groups, or Admin Panel.
-- No onboarding wizard — users go straight from signup to the app.
-- No billing/subscription tiers.
-
 ---
