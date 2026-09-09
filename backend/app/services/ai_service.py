@@ -49,8 +49,11 @@ class AIService:
     """Service for AI-powered note features"""
 
     def __init__(self):
-        self.client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-4o-mini"  # Cost-effective model
+        self.client = openai.AsyncOpenAI(
+            api_key=settings.GROQ_API_KEY,
+            base_url="https://api.groq.com/openai/v1",
+        )
+        self.model = settings.GROQ_CHAT_MODEL# Cost-effective model
         self.max_tokens = 2000
 
     async def summarize_note(self, content: str, title: str) -> Optional[str]:

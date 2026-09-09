@@ -5,18 +5,20 @@ import { AnimatePresence, motion, useInView, useScroll, useSpring } from "framer
 import {
   BookOpen,
   Brain,
-  Calendar,
+CalendarCheck,
   Layers,
   Upload,
   MessageCircle,
-  BarChart3,
   Search,
   FileText,
-  ArrowRight,
   Check,
   Minus,
-  ChevronDown,
   Star,
+  Home,
+  Lightbulb,
+  Sparkles,
+  Paperclip,
+  Mic,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 
@@ -433,7 +435,6 @@ function Navbar() {
         <nav className="hidden items-center gap-8 text-sm font-medium text-black/60 md:flex">
           <a href="#features" className="transition-colors hover:text-[#1A1A1A]">Features</a>
           <a href="#how-it-works" className="transition-colors hover:text-[#1A1A1A]">How it works</a>
-          <a href="#faq" className="transition-colors hover:text-[#1A1A1A]">FAQ</a>
         </nav>
         <div className="flex items-center gap-3">
           <a href="/login" className="hidden text-sm font-medium text-black/70 hover:text-[#1A1A1A] sm:block">
@@ -453,8 +454,8 @@ function Navbar() {
 }
 
 // ---------------------------------------------------------------------------
-// Hero — headline/subhead/CTAs preserved verbatim. Adds typewriter pills,
-// mesh background, particles, and a mouse-tilted app preview.
+// Hero — headline/subhead preserved verbatim. Adds typewriter pills,
+// mesh background, particles, a mouse-tilted app preview, and primary CTAs.
 // ---------------------------------------------------------------------------
 function Hero() {
   const pills = [
@@ -462,8 +463,8 @@ function Hero() {
     { icon: MessageCircle, label: "Chat with Notes" },
     { icon: Brain, label: "Generate Quizzes" },
     { icon: Layers, label: "Flashcards" },
-    { icon: Calendar, label: "Study Planner" },
-    { icon: BarChart3, label: "Analytics" },
+    { icon: CalendarCheck, label: "Study Planner" },
+
   ];
 
   return (
@@ -553,6 +554,13 @@ function Hero() {
           transition={{ duration: 0.5, delay: 0.36 }}
           className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
+
+          <a
+            href="#how-it-works"
+            className="inline-flex h-[52px] items-center justify-center rounded-xl border border-black/15 px-8 text-sm font-medium text-black/70 transition-colors hover:border-black/25 hover:text-[#1A1A1A]"
+          >
+            See how it works
+          </a>
         </motion.div>
 
         <div className="mx-auto mt-5 h-5 text-center text-xs font-medium" style={{ color: TEAL }}>
@@ -604,7 +612,8 @@ function Hero() {
 }
 
 // ---------------------------------------------------------------------------
-// App preview — mouse-tilt (item #4) + simulated AI chat typing (item #6)
+// App preview — mouse-tilt (item #4). Mirrors the real app's AI Tutor
+// welcome screen (sidebar + logo + suggestion cards + input bar).
 // ---------------------------------------------------------------------------
 function AppPreview() {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -621,60 +630,20 @@ function AppPreview() {
   };
 
   const navItems = [
-    { icon: BarChart3, label: "Dashboard" },
-    { icon: FileText, label: "Materials", active: false },
-    { icon: MessageCircle, label: "AI Chat", active: true },
-    { icon: BookOpen, label: "Notes" },
-    { icon: Calendar, label: "Planner" },
+    { icon: Home, label: "Dashboard" },
+    { icon: MessageCircle, label: "AI Tutor", active: true },
+    { icon: BookOpen, label: "Smart Notes" },
+    { icon: Brain, label: "AI Quiz" },
+    { icon: Layers, label: "Flashcards" },
+    { icon: CalendarCheck , label: "Study Planner" },
   ];
 
-  // Simulated chat sequence: student message -> "typing..." -> AI reply, looped.
-  const sequence = [
-    { role: "user", text: "Explain Binary Search from my Algorithms notes." },
-    {
-      role: "ai",
-      text: "Binary Search repeatedly splits a sorted array in half, comparing the middle element to your target — cutting the search space every step.",
-    },
-    { role: "user", text: "Create 5 practice questions on it." },
+  const suggestions = [
+    { icon: BookOpen, title: "Summarize everything I've uploaded", subtitle: "Across all materials." },
+    { icon: Lightbulb, title: "What topics should I focus on?", subtitle: "Prioritize your study." },
+    { icon: FileText, title: "Compare my documents", subtitle: "Spot overlaps & gaps." },
+    { icon: Sparkles, title: "Quiz me on a random topic", subtitle: "Test your knowledge." },
   ];
-  const [visibleCount, setVisibleCount] = useState(0);
-  const [aiTyping, setAiTyping] = useState(false);
-
-  useEffect(() => {
-    let timers: ReturnType<typeof setTimeout>[] = [];
-    let cancelled = false;
-
-    const run = () => {
-      if (cancelled) return;
-      setVisibleCount(0);
-      setAiTyping(false);
-      sequence.forEach((msg, i) => {
-        const revealAt = i === 0 ? 400 : i === 1 ? 400 + 900 + 1300 : 400 + 900 + 1300 + 1200;
-        if (msg.role === "ai") {
-          timers.push(
-            setTimeout(() => {
-              if (!cancelled) setAiTyping(true);
-            }, revealAt - 900)
-          );
-        }
-        timers.push(
-          setTimeout(() => {
-            if (cancelled) return;
-            setAiTyping(false);
-            setVisibleCount(i + 1);
-          }, revealAt)
-        );
-      });
-      timers.push(setTimeout(run, 400 + 900 + 1300 + 1200 + 2600));
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-      timers.forEach(clearTimeout);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <motion.div
@@ -691,7 +660,7 @@ function AppPreview() {
         <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
         <span className="h-2.5 w-2.5 rounded-full bg-black/10" />
       </div>
-      <div className="flex h-[360px] sm:h-[420px]">
+      <div className="flex h-[420px] sm:h-[480px]">
         <div className="hidden w-48 shrink-0 flex-col gap-1 border-r border-black/5 bg-white px-3 py-4 sm:flex">
           {navItems.map((item) => (
             <div
@@ -707,55 +676,45 @@ function AppPreview() {
             </div>
           ))}
         </div>
-        <div className="flex flex-1 flex-col px-6 py-6 sm:px-8">
-          <p className="font-serif text-lg font-semibold" style={{ color: INK }}>
-            Hello Taiba 👋
+        <div className="flex flex-1 flex-col items-center justify-center px-6 py-6 sm:px-10">
+          <motion.div
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-md"
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Logo size={30} />
+          </motion.div>
+          <p className="mt-4 font-serif text-lg font-semibold" style={{ color: INK }}>
+            AI Learning Companion
           </p>
-          <p className="mt-1 text-xs text-black/45">Ask anything about your notes...</p>
+          <p className="mt-1 text-xs font-medium" style={{ color: TEAL }}>
+            Study Smarter. Learn Faster.
+          </p>
+          <p className="mt-3 max-w-sm text-center text-[11px] leading-relaxed text-black/45">
+            Upload notes, ask questions, generate quizzes and understand concepts faster.
+          </p>
 
-          <div className="mt-5 flex flex-col gap-3">
-            <AnimatePresence initial={false}>
-              {sequence.slice(0, visibleCount).map((msg, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 10, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className={
-                    msg.role === "user"
-                      ? "ml-auto max-w-[75%] rounded-2xl rounded-tr-sm bg-[#2D3D40] px-4 py-2.5 text-xs text-white"
-                      : "mr-auto max-w-[80%] rounded-2xl rounded-tl-sm border border-black/10 bg-white px-4 py-2.5 text-xs text-black/70"
-                  }
-                >
-                  {msg.text}
-                </motion.div>
-              ))}
-              {aiTyping && (
-                <motion.div
-                  key="typing"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="mr-auto flex items-center gap-1 rounded-2xl rounded-tl-sm border border-black/10 bg-white px-4 py-3"
-                >
-                  {[0, 1, 2].map((d) => (
-                    <motion.span
-                      key={d}
-                      className="h-1.5 w-1.5 rounded-full bg-black/30"
-                      animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{ duration: 0.9, repeat: Infinity, delay: d * 0.15 }}
-                    />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <div className="mt-6 grid w-full max-w-md grid-cols-2 gap-2.5">
+            {suggestions.map((s) => (
+              <div
+                key={s.title}
+                className="flex flex-col gap-1.5 rounded-xl border border-black/10 bg-white px-3.5 py-3 text-left"
+              >
+                <s.icon className="h-3.5 w-3.5" style={{ color: TEAL }} strokeWidth={1.75} />
+                <p className="text-[11px] font-medium leading-snug" style={{ color: INK }}>
+                  {s.title}
+                </p>
+                <p className="text-[10px] text-black/40">{s.subtitle}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="mt-auto flex items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3">
-            <Search className="h-3.5 w-3.5 text-black/30" strokeWidth={1.75} />
-            <span className="text-xs text-black/30">
+          <div className="mt-6 flex w-full max-w-md items-center gap-2 rounded-xl border border-black/10 bg-white px-4 py-3">
+            <Paperclip className="h-3.5 w-3.5 text-black/30" strokeWidth={1.75} />
+            <span className="flex-1 text-xs text-black/30">
               <Typewriter phrases={["Ask anything about your study materials…", "Summarize chapter 4 for me…", "Quiz me on today's notes…"]} />
             </span>
+            <Mic className="h-3.5 w-3.5 text-black/30" strokeWidth={1.75} />
           </div>
         </div>
       </div>
@@ -763,34 +722,7 @@ function AppPreview() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Stats — animated counters, item #9
-// ---------------------------------------------------------------------------
-function Stats() {
-  const stats = [
-    { value: "10+", label: "Study Tools" },
-    { value: "5+", label: "AI Features" },
-    { value: "100%", label: "Free for Students" },
-    { value: "24/7", label: "Available" },
-  ];
 
-  return (
-    <section className="border-y border-black/5 bg-white px-6 py-14">
-      <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 sm:grid-cols-4">
-        {stats.map((s, i) => (
-          <Reveal key={s.label} delay={i * 0.08}>
-            <div className={`text-center ${i > 0 ? "sm:border-l sm:border-black/10" : ""}`}>
-              <p className="font-serif text-3xl font-bold sm:text-4xl" style={{ color: TEAL }}>
-                <Counter value={s.value} />
-              </p>
-              <p className="mt-1 text-xs font-medium uppercase tracking-wide text-black/45">{s.label}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Feature card — spotlight, lift, icon rotate, arrow slide. Item #7.
@@ -832,12 +764,7 @@ function FeatureCard({ f }: { f: { icon: any; title: string; desc: string } }) {
         {f.title}
       </h3>
       <p className="relative mt-2 text-sm leading-relaxed text-black/55">{f.desc}</p>
-      <span
-        className="relative mt-4 inline-flex items-center gap-1 text-sm font-medium transition-transform duration-300 group-hover:translate-x-1"
-        style={{ color: TEAL }}
-      >
-        Learn more <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
-      </span>
+
     </div>
   );
 }
@@ -855,7 +782,7 @@ function Features() {
       desc: "AI builds practice quizzes instantly from whatever you upload, so revision never starts from a blank page.",
     },
     {
-      icon: Calendar,
+      icon: CalendarCheck ,
       title: "Smart Study Planner",
       desc: "A weekly schedule built around your workload, deadlines, and how you actually learn.",
     },
@@ -899,7 +826,7 @@ function HowItWorks() {
     { label: "AI Understands", icon: Brain },
     { label: "Ask Questions", icon: MessageCircle },
     { label: "Practice Quiz", icon: Check },
-    { label: "Track Progress", icon: BarChart3 },
+    { label: "Study Planner", icon: CalendarCheck },
   ];
   const sectionRef = useRef<HTMLDivElement>(null);
   const inView = useInView(sectionRef, { once: true, amount: 0.3 });
@@ -977,49 +904,130 @@ function HowItWorks() {
 // ---------------------------------------------------------------------------
 function Comparison() {
   const rows = [
-    { traditional: "Read everything manually", ai: "AI summarizes instantly" },
-    { traditional: "Create notes yourself", ai: "AI generates notes" },
-    { traditional: "Make quizzes manually", ai: "AI creates quizzes" },
-    { traditional: "Forget revision", ai: "AI reminds you" },
-    { traditional: "No analytics", ai: "Smart progress tracking" },
+    {
+      traditional: "Read through everything",
+      ai: "Instant AI summaries",
+    },
+    {
+      traditional: "Write notes manually",
+      ai: "AI-generated notes",
+    },
+    {
+      traditional: "Create practice questions",
+      ai: "AI-generated quizzes",
+    },
+    {
+      traditional: "Track revision yourself",
+      ai: "Smart revision reminders",
+    },
+   {
+  traditional: "Create your study plan manually",
+  ai: "AI creates a personalized study plan",
+},
   ];
 
   return (
     <section className="px-6 py-24">
-      <div className="mx-auto max-w-3xl text-center">
+      <div className="mx-auto max-w-4xl text-center">
         <Reveal>
           <SectionLabel>Why Choose Us</SectionLabel>
-          <h2 className="font-serif text-3xl font-bold sm:text-4xl" style={{ color: INK }}>
-            Studying, without the busywork
+
+          <h2
+            className="font-serif text-3xl font-bold sm:text-4xl"
+            style={{
+              color: INK,
+            }}
+          >
+            Spend less time organizing.
+            <br />
+            More time learning.
           </h2>
+
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-black/55">
+            Let AI handle the repetitive work so you can focus on
+            understanding, practicing, and making real progress.
+          </p>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="mt-12 overflow-hidden rounded-3xl border border-black/8">
+          <div className="mt-12 overflow-hidden rounded-[2rem] border border-black/8 bg-white shadow-[0_12px_40px_rgba(0,0,0,0.04)]">
+
+            {/* Table header */}
             <div className="grid grid-cols-2">
-              <div className="border-b border-r border-black/8 bg-white px-6 py-4 text-sm font-semibold text-black/50">
+              <div
+                className="border-b border-r border-black/8 bg-white px-7 py-5 text-left text-sm font-semibold text-black/45"
+              >
                 Traditional Study
               </div>
-              <div className="border-b border-black/8 px-6 py-4 text-sm font-semibold text-white" style={{ background: TEAL }}>
+
+              <div
+                className="border-b border-black/8 px-7 py-5 text-left text-sm font-semibold text-white"
+                style={{
+                  background: `linear-gradient(
+                    135deg,
+                    ${TEAL},
+                    #25383C
+                  )`,
+                }}
+              >
                 AI Learning Companion
               </div>
             </div>
+
+            {/* Rows */}
             {rows.map((row, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, x: -12 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true, amount: 0.6 }}
-                transition={{ duration: 0.4, delay: i * 0.08 }}
+                initial={{
+                  opacity: 0,
+                  x: -12,
+                }}
+                whileInView={{
+                  opacity: 1,
+                  x: 0,
+                }}
+                viewport={{
+                  once: true,
+                  amount: 0.6,
+                }}
+                transition={{
+                  duration: 0.4,
+                  delay: i * 0.08,
+                }}
                 className="grid grid-cols-2"
               >
-                <div className="flex items-center gap-2 border-r border-black/8 bg-white px-6 py-4 text-left text-sm text-black/50">
-                  <Minus className="h-3.5 w-3.5 shrink-0 text-black/25" strokeWidth={2.5} />
-                  {row.traditional}
+                {/* Traditional */}
+                <div className="flex items-center gap-3 border-r border-black/8 bg-white px-7 py-5 text-left text-sm text-black/45">
+                  <Minus
+                    className="h-3.5 w-3.5 shrink-0 text-black/20"
+                    strokeWidth={2.5}
+                  />
+
+                  <span>
+                    {row.traditional}
+                  </span>
                 </div>
-                <div className="flex items-center gap-2 bg-[#F4F6F5] px-6 py-4 text-left text-sm font-medium" style={{ color: INK }}>
-                  <Check className="h-3.5 w-3.5 shrink-0" style={{ color: TEAL }} strokeWidth={2.5} />
-                  {row.ai}
+
+                {/* AI */}
+                <div
+                  className="flex items-center gap-3 border-b border-black/5 px-7 py-5 text-left text-sm font-medium"
+                  style={{
+                    color: INK,
+                    background:
+                      "linear-gradient(90deg, #F4F6F5 0%, #F8F9F8 100%)",
+                  }}
+                >
+                  <Check
+                    className="h-3.5 w-3.5 shrink-0"
+                    style={{
+                      color: TEAL,
+                    }}
+                    strokeWidth={2.5}
+                  />
+
+                  <span>
+                    {row.ai}
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -1029,192 +1037,77 @@ function Comparison() {
     </section>
   );
 }
-
 // ---------------------------------------------------------------------------
-// Testimonials — staggered card reveal
+// Footer — minimal, clean, and professional
 // ---------------------------------------------------------------------------
-function Testimonials() {
-  const quotes = [
-    { text: "Saved me hours of revision before finals.", name: "Computer Science Student" },
-    { text: "It's like having a tutor who already read every slide.", name: "Pre-Med Student" },
-    { text: "The quiz generator alone is worth it.", name: "Engineering Student" },
-  ];
 
+function Footer() {
   return (
-    <section className="px-6 py-24" style={{ background: CREAM }}>
-      <div className="mx-auto max-w-5xl text-center">
-        <Reveal>
-          <SectionLabel>Student Voices</SectionLabel>
-          <h2 className="font-serif text-3xl font-bold sm:text-4xl" style={{ color: INK }}>
-            Trusted by students studying smarter
-          </h2>
-        </Reveal>
+    <footer className="px-6 pb-8 pt-12">
+      <div className="mx-auto max-w-5xl border-t border-black/8 pt-8">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          {/* Brand */}
+          <div className="text-center sm:text-left">
+            <p
+              className="font-serif text-lg font-semibold"
+              style={{ color: INK }}
+            >
+              AI Learning Companion
+            </p>
 
-        <div className="mt-12 grid gap-5 sm:grid-cols-3">
-          {quotes.map((q, i) => (
-            <Reveal key={q.name} delay={i * 0.1}>
-              <div className="rounded-3xl border border-black/8 bg-white p-7 text-left transition-transform duration-300 hover:-translate-y-1">
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <Star key={j} className="h-3.5 w-3.5 fill-current" style={{ color: GOLD }} />
-                  ))}
-                </div>
-                                <p className="mt-4 text-sm leading-relaxed text-black/70">&quot;{q.text}&quot;</p>
-                <p className="mt-4 text-xs font-medium uppercase tracking-wide text-black/40">{q.name}</p>
-              </div>
-            </Reveal>
-          ))}
+            <p className="mt-1 text-xs text-black/45">
+              Learn smarter. Study better.
+            </p>
+          </div>
+
+          {/* Copyright */}
+          <p className="text-xs text-black/40">
+            © {new Date().getFullYear()} AI Learning Companion. All rights
+            reserved.
+          </p>
         </div>
       </div>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// FAQ — height / opacity / blur / arrow-rotation transitions. Item #15.
-// ---------------------------------------------------------------------------
-function FAQ() {
-  const items = [
-    { q: "Can AI answer from my PDFs?", a: "Yes — upload any PDF and ask questions directly about its content." },
-    { q: "Is my data secure?", a: "Yes. Your documents and chats are private to your account." },
-    { q: "Can I upload PPT?", a: "Yes, PowerPoint files are supported alongside PDFs and notes." },
-  ];
-  const [open, setOpen] = useState<number | null>(0);
-
-  return (
-    <section id="faq" className="px-6 py-24">
-      <div className="mx-auto max-w-2xl">
-        <Reveal>
-          <div className="text-center">
-            <SectionLabel>FAQ</SectionLabel>
-            <h2 className="font-serif text-3xl font-bold sm:text-4xl" style={{ color: INK }}>
-              Questions, answered
-            </h2>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.1}>
-          <div className="mt-12 divide-y divide-black/8 rounded-3xl border border-black/8 bg-white">
-            {items.map((item, i) => {
-              const isOpen = open === i;
-              return (
-                <div key={item.q}>
-                  <button
-                    onClick={() => setOpen(isOpen ? null : i)}
-                    className="flex w-full items-center justify-between px-6 py-5 text-left text-sm font-medium"
-                    style={{ color: INK }}
-                    aria-expanded={isOpen}
-                  >
-                    {item.q}
-                    <motion.span animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.25 }}>
-                      <ChevronDown className="h-4 w-4 shrink-0" style={{ color: "rgba(26,26,26,0.4)" }} />
-                    </motion.span>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        key="content"
-                        initial={{ height: 0, opacity: 0, filter: "blur(6px)" }}
-                        animate={{ height: "auto", opacity: 1, filter: "blur(0px)" }}
-                        exit={{ height: 0, opacity: 0, filter: "blur(6px)" }}
-                        transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                        style={{ overflow: "hidden" }}
-                      >
-                        <p className="px-6 pb-5 text-sm text-black/55">{item.a}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              );
-            })}
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Final CTA — animated gradient + particles + magnetic ripple button. #10
-// ---------------------------------------------------------------------------
-function FinalCTA() {
-  return (
-    <section className="px-6 py-24">
-      <Reveal>
-        <motion.div
-          className="relative mx-auto max-w-4xl overflow-hidden rounded-[2.5rem] px-8 py-16 text-center"
-          style={{ backgroundSize: "200% 200%" }}
-          animate={{
-            background: [
-              `linear-gradient(160deg, ${BROWN} 0%, #324247 55%, ${TEAL} 100%)`,
-              `linear-gradient(200deg, ${BROWN} 0%, #324247 55%, ${TEAL} 100%)`,
-              `linear-gradient(160deg, ${BROWN} 0%, #324247 55%, ${TEAL} 100%)`,
-            ],
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <FloatingParticles count={10} />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -left-16 -top-16 h-64 w-64 rounded-full opacity-30 blur-3xl"
-            style={{ background: "radial-gradient(circle, #4A6469 0%, transparent 70%)" }}
-          />
-          <h2 className="relative font-serif text-3xl font-bold text-white sm:text-4xl">
-            Ready to study smarter?
-          </h2>
-          <p className="relative mt-3 text-white/75">Start using AI Learning Companion today — free for students.</p>
-          <MagneticCTA
-            href="/signup"
-            className="relative mt-8 inline-flex h-[52px] items-center justify-center gap-2 rounded-xl px-8 text-sm font-medium"
-            style={{ background: GOLD, color: "#1A1A1A" }}
-          >
-            Get Started Free
-            <ArrowRight className="h-4 w-4" strokeWidth={2} />
-          </MagneticCTA>
-        </motion.div>
-      </Reveal>
-    </section>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Footer — unchanged content, subtle link micro-interaction added
-// ---------------------------------------------------------------------------
-function Footer() {
-  const columns = [
-    { title: "Product", links: ["Features", "Pricing (Coming Soon)", "About"] },
-    { title: "Resources", links: ["Documentation", "Contact"] },
-    { title: "Legal", links: ["Privacy", "Terms"] },
-  ];
-
-  return (
-    <footer>
-        <footer className="border-t border-border py-6 text-center text-sm text-muted-foreground">
-  © 2026 AI Learning Companion. All rights reserved.
-</footer>
     </footer>
   );
 }
 
 // ---------------------------------------------------------------------------
+// Landing Page
+// ---------------------------------------------------------------------------
+
 export default function LandingPage() {
   const [loading, setLoading] = useState(true);
 
   return (
-    <div style={{ background: CREAM }}>
-      <AnimatePresence>{loading && <LoadingScreen onDone={() => setLoading(false)} />}</AnimatePresence>
+    <div
+      style={{
+        background: CREAM,
+      }}
+    >
+      <AnimatePresence>
+        {loading && (
+          <LoadingScreen
+            onDone={() => setLoading(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <ScrollProgressBar />
+
       <CursorGlow />
+
       <Navbar />
+
       <Hero />
-      <Stats />
+
       <Features />
+
       <HowItWorks />
+
       <Comparison />
-      <Testimonials />
-      <FAQ />
-      <FinalCTA />
+
       <Footer />
+
     </div>
   );
 }

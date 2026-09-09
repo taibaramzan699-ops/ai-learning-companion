@@ -1,14 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { ChevronDown, FileText, Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/services/chat";
 
+/**
+ * The AI occasionally returns markdown tables where every row got joined
+ * onto a single line instead of being newline-separated, e.g.:
+ *   "| Value | Effect | |------|------|| `repeat` | Tiles... |"
+ * remark-gfm (correctly) refuses to parse that as a table, since GFM
+ * requires each row on its own line — so it prints as raw pipe text.
+ *
+ * This walks the message line by line and, only on lines that look like a
+ * squished table (they contain a GFM separator run like `|---|---|` AND a
+ * spot where two pipes sit back-to-back with nothing but whitespace between
+ * them — the seam where one row's closing `|` collided with the next row's
+ * opening `|`), breaks it into one row per line. Fenced code blocks are
+ * split out first and left completely untouched, so this can never mangle
+ * a code sample that legitimately contains "||" (e.g. JS's OR operator).
+ */
+function normalizeSquishedTables(markdown: string): string {
+  const segments = markdown.split(/(```[\s\S]*?```)/g);
+
+  return segments
+    .map((segment, i) => {
+      const isCodeFence = i % 2 === 1;
+      if (isCodeFence) return segment;
+
+      return segment
+        .split("\n")
+        .map((line) => {
+          const hasSeparatorRow = /\|\s*:?-{2,}:?\s*\|/.test(line);
+          const hasJoinedRows = /\|\s*\|/.test(line);
+          if (!hasSeparatorRow || !hasJoinedRows) return line;
+
+          return line.replace(/\|\s*\|/g, "|\n|");
+        })
+        .join("\n");
+    })
+    .join("");
+}
+
 export function ChatBubble({ message }: { message: ChatMessage }) {
   const [showSources, setShowSources] = useState(false);
   const isUser = message.role === "user";
+
+  const displayContent = useMemo(
+    () => (isUser ? message.content : normalizeSquishedTables(message.content)),
+    [isUser, message.content]
+  );
 
   return (
     <div className={cn("flex items-start gap-2.5", isUser ? "flex-row-reverse" : "flex-row")}>
@@ -36,8 +79,13 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
           {isUser ? (
             <span className="whitespace-pre-wrap">{message.content}</span>
           ) : (
-            <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5">
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+            <div
+              className={cn(
+                "prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-ul:my-1.5 prose-li:my-0.5",
+                "prose-table:my-2 prose-table:w-full prose-th:border prose-th:border-border prose-th:bg-ink-50 prose-th:px-2 prose-th:py-1 prose-th:text-left dark:prose-th:bg-ink-800/60 prose-td:border prose-td:border-border prose-td:px-2 prose-td:py-1"
+              )}
+            >
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayContent}</ReactMarkdown>
             </div>
           )}
         </div>

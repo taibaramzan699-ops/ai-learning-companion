@@ -11,7 +11,10 @@ from app.models.chat import SourceChunk, ChatMessageInDB
 
 logger = logging.getLogger(__name__)
 
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+client = OpenAI(
+    api_key=settings.OPENAI_API_KEY,
+    base_url="https://api.openai.com/v1",
+)
 
 SYSTEM_INSTRUCTION = (
     "You are a knowledgeable study assistant helping a student understand their course material. "
@@ -38,7 +41,7 @@ MIN_RELEVANCE_SCORE = 0.55  # chunks below this similarity score are dropped as 
 
 
 class GenerationBlocked(Exception):
-    """Raised when OpenAI's content filter blocks the response instead of a real error."""
+    """Raised when the model's content filter blocks the response instead of a real error."""
 
 
 class GenerationRateLimited(Exception):
@@ -139,7 +142,7 @@ async def answer_question(
         logger.warning("OpenAI rate limit/quota hit for conversation %s", conversation_id)
         answer_text = (
             "I'm getting a lot of requests right now (or the API quota is exhausted). "
-            "Please wait a moment and try again, or check your OpenAI billing/usage."
+            "Please wait a moment and try again."
         )
     except Exception:
         logger.exception("OpenAI generation failed for conversation %s", conversation_id)

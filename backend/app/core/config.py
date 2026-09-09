@@ -44,5 +44,7 @@ class Settings(BaseSettings):
     GEMINI_EMBEDDING_MODEL: str = "models/text-embedding-004"
     OPENAI_API_KEY: str
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
+    GROQ_API_KEY: str
+    GROQ_CHAT_MODEL: str = "llama-3.3-70b-versatile"
     REDIS_URL: str = "redis://localhost:6379/0"
 settings = Settings()  # type: ignore[call-arg]

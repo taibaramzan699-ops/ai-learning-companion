@@ -1,0 +1,14 @@
+[variables]
+PYTHONUNBUFFERED = "1"
+
+[phases.setup]
+nixPkgs = ["python311"]
+
+[phases.install]
+cmds = [
+    "pip install --upgrade pip",
+    "pip install -r backend/requirements.txt"
+]
+
+[start]
+cmd = "bash start.sh"

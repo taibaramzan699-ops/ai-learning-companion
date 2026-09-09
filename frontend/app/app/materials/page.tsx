@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { UploadCloud, FileText, Loader2 } from "lucide-react";
 import { useDocuments, useUploadDocument } from "@/features/documents/use-documents";
 import { DocumentCard } from "@/features/documents/document-card";
@@ -12,7 +11,6 @@ import { cn } from "@/lib/utils";
 const ACCEPTED_EXTENSIONS = ".pdf,.png,.jpg,.jpeg,.docx,.pptx";
 
 export default function MaterialsPage() {
-  const router = useRouter();
   const { data: documents, isLoading, isError } = useDocuments();
   const { mutate: uploadDoc, isPending: isUploading } = useUploadDocument();
   const [isDragging, setIsDragging] = useState(false);
@@ -22,11 +20,11 @@ export default function MaterialsPage() {
   function handleFile(file: File) {
     setUploadError(null);
     uploadDoc(file, {
-      onSuccess: (doc: { id: string }) => {
-        // Straight to chat with this document — that's the actual point of
-        // uploading, not just parking it in a list.
-        router.push(`/app/chat?doc=${doc.id}`);
-      },
+      // Just upload — do NOT navigate. The new document lands in the
+      // Recent Files list below with a "Processing" badge (useDocuments
+      // polls until it flips to "ready"). Opening it in chat/AI Tutor is a
+      // deliberate action the user takes by clicking the ready card, not
+      // something that should happen automatically mid-upload.
       onError: (err: Error) => {
         setUploadError(err.message ?? "Upload failed. Please try again.");
       },
@@ -87,7 +85,7 @@ export default function MaterialsPage() {
           <>
             <Loader2 className="h-8 w-8 animate-spin text-ink-400" />
             <p className="font-medium text-ink-950 dark:text-ink-50">Uploading…</p>
-            <p className="text-sm text-ink-400">We&apos;ll take you straight to chat once it&apos;s ready.</p>
+            <p className="text-sm text-ink-400">It&apos;ll show up below once it&apos;s processed.</p>
           </>
         ) : (
           <>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { UploadCloud, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -22,7 +21,6 @@ export function UploadDropzone() {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const uploadMutation = useUploadDocument();
-  const router = useRouter();
 
   const handleFiles = useCallback(
     async (files: FileList | null) => {
@@ -40,13 +38,20 @@ export function UploadDropzone() {
       }
 
       try {
+        // Just kick off the upload — do NOT navigate anywhere. The new
+        // document shows up in the Recent Files list on its own (the
+        // useUploadDocument mutation invalidates the documents query, and
+        // useDocuments polls every 3s while anything is "processing"),
+        // moving from "Processing" to "Ready" without any redirect here.
+        // Opening a file in the AI Tutor / chat is a deliberate action the
+        // user takes by clicking the ready DocumentCard — never something
+        // that should happen automatically right after upload.
         await uploadMutation.mutateAsync(file);
-        router.push("/app/materials");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Upload failed. Please try again.");
       }
     },
-    [uploadMutation, router]
+    [uploadMutation]
   );
 
   return (

@@ -5,7 +5,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 async function authHeader(): Promise<Record<string, string>> {
   const user = auth.currentUser;
   if (!user) return {};
-  const token = await user.getIdToken();
+  const token = await user.getIdToken(true); // force refresh — avoids stale/expired cached tokens
   return { Authorization: `Bearer ${token}` };
 }
 
